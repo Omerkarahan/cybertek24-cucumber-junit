@@ -1,24 +1,24 @@
 package com.cybertek.tests;
 
-import com.cybertek.pages.VyTrackPage;
+import com.cybertek.pages.VyTrackDashboardPage;
+import com.cybertek.pages.VyTrackLoginPage;
 import com.cybertek.utilities.BrowserUtils;
 import com.cybertek.utilities.ConfigurationReader;
 import com.cybertek.utilities.Driver;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class VyTrackLoginDDTTest {
 
-    VyTrackPage vyTrackPage = new VyTrackPage();
-    String vytrackFile = "VyTrackQa2Users.xlsx";
     @Before
     public void setUp() {
-        // set up browser etc if needed
-        //open the url
 
         Driver.getDriver().get(ConfigurationReader.getProperty("vytrack.url"));
        // vyTrackPage.login("user1","UserUser123");
@@ -30,27 +30,56 @@ public class VyTrackLoginDDTTest {
 //    }
     @Test
     public void loginDDTTest() throws IOException {
-        // open excel file
-        //add page object
-        //loop and read credentials
-        //write the result in excel file
+        VyTrackDashboardPage dashboardPage = new VyTrackDashboardPage();
+        // open excel book
+        String vytrackFile = "VyTrackQa2Users.xlsx";
+        FileInputStream in = new FileInputStream(vytrackFile);
+        XSSFWorkbook workbook = new XSSFWorkbook(in);
 
-        XSSFWorkbook workbook = new XSSFWorkbook(vytrackFile);
+        XSSFSheet workSheet = workbook.getSheetAt(0);
+        /**
+        String userName = "user1";
+        String password = "UserUser123";
+        String firstName = "John";
+        String lastName = "Doe";
+        */
+        int rowsCount = workSheet.getLastRowNum();
 
-        XSSFSheet dataSheet = workbook.getSheetAt(0);
+        for ( int i = 1; i <=rowsCount; i++ ) {
+            String userName = workSheet.getRow(i).getCell(0).toString();
+            String password = workSheet.getRow(i).getCell(1).toString();
+            String firstName = workSheet.getRow(i).getCell(2).toString();
+            String lastName = workSheet.getRow(i).getCell(3).toString();
+            VyTrackLoginPage loginPage = new VyTrackLoginPage();
+            loginPage.login(userName, password);
 
-        int rowsCount = dataSheet.getLastRowNum();
+            System.out.println("fullname = " + dashboardPage.fullName.getText());
 
-        for ( int i = 1; i <=rowsCount; i++ ){
-
-            vyTrackPage.userNameField.sendKeys(dataSheet.getRow(i).getCell(0).toString());
-            vyTrackPage.passwordField.sendKeys(dataSheet.getRow(i).getCell(1).toString());
-            vyTrackPage.loginBtn.click();
-            vyTrackPage.userMenu.click();
             BrowserUtils.sleep(1);
-            vyTrackPage.logOut.click();
+            String actualFullName = dashboardPage.fullName.getText();
+            //Assert.assertTrue(actualFullName.contains(firstName ) && actualFullName.contains(lastName));
 
-            System.out.println(dataSheet.getRow(i).getCell(0) +" | " + dataSheet.getRow(i).getCell(1) + " | " + dataSheet.getRow(i).getCell(2) + " | " + dataSheet.getRow(i).getCell(3));
+            XSSFCell resultCell = workSheet.getRow(i).getCell(4);
+
+            if (actualFullName.contains(firstName) && actualFullName.contains(lastName)) {
+                System.out.println("PASS");
+                resultCell.setCellValue("PASS");
+            } else {
+                System.out.println("FAIL");
+                resultCell.setCellValue("FAIL");
+            }
+            dashboardPage.logout();
+            BrowserUtils.sleep(1);
+
+        }
+        // save changes in the excel file
+        FileOutputStream out = new FileOutputStream(vytrackFile);
+        workbook.write(out);
+
+        in.close();
+        out.close();
+        workbook.close();
+
         }
     }
-}
+
