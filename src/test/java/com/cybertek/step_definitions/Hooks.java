@@ -43,7 +43,7 @@ public class Hooks {
             scenario.attach(image, "image/png", scenario.getName());
         }
         System.out.println("AFTER - tearDown method is running after the scenario:" + scenario.getName());
-        Driver.closeDriver();
+       // Driver.closeDriver();
     }
 
 }
